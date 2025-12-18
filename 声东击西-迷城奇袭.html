@@ -1,0 +1,1193 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>声东击西：迷城奇袭 - 三十六计第六计</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            touch-action: none;
+        }
+
+        body {
+            font-family: 'Microsoft YaHei', 'SimHei', sans-serif;
+            background: #0a0e27;
+            color: #fff;
+            overflow: hidden;
+            position: fixed;
+            width: 100%;
+            height: 100%;
+        }
+
+        #gameContainer {
+            width: 100%;
+            height: 100vh;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+        }
+
+        #gameCanvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+        }
+
+        #uiOverlay {
+            position: relative;
+            z-index: 10;
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+            pointer-events: none;
+        }
+
+        #topBar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 15px;
+            background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(5px);
+            pointer-events: auto;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .stat-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 14px;
+        }
+
+        .stat-bar {
+            width: 120px;
+            height: 20px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 10px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .stat-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #4a90e2, #357abd);
+            transition: width 0.3s;
+            border-radius: 10px;
+        }
+
+        .stat-text {
+            min-width: 60px;
+            font-weight: bold;
+        }
+
+        #centerArea {
+            flex: 1;
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            padding: 20px;
+            pointer-events: none;
+        }
+
+        .gate-display {
+            text-align: center;
+            pointer-events: auto;
+            background: rgba(0, 0, 0, 0.5);
+            padding: 15px;
+            border-radius: 10px;
+            min-width: 120px;
+        }
+
+        .gate-icon {
+            font-size: 48px;
+            margin-bottom: 10px;
+        }
+
+        .gate-label {
+            font-size: 16px;
+            margin-bottom: 5px;
+        }
+
+        .gate-status {
+            font-size: 12px;
+            color: #ffd700;
+        }
+
+        #bottomBar {
+            padding: 15px;
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(5px);
+            pointer-events: auto;
+        }
+
+        #actionButtons {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            justify-content: center;
+        }
+
+        .btn {
+            padding: 12px 20px;
+            font-size: 16px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s;
+            min-height: 50px;
+            flex: 1;
+            min-width: 140px;
+            max-width: 200px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            color: white;
+        }
+
+        .btn-success:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(245, 87, 108, 0.4);
+        }
+
+        .btn-success:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .btn-item {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            color: white;
+        }
+
+        .btn-item:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(79, 172, 254, 0.4);
+        }
+
+        .btn-item:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .btn-cooldown {
+            position: relative;
+        }
+
+        .cooldown-text {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 12px;
+            font-weight: bold;
+        }
+
+        #modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.9);
+            z-index: 100;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            pointer-events: auto;
+        }
+
+        .modal-content {
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            padding: 30px;
+            border-radius: 15px;
+            max-width: 90%;
+            max-height: 90%;
+            overflow-y: auto;
+            text-align: center;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+        }
+
+        .modal-title {
+            font-size: 24px;
+            margin-bottom: 20px;
+            color: #ffd700;
+        }
+
+        .modal-text {
+            font-size: 16px;
+            line-height: 1.8;
+            margin-bottom: 20px;
+        }
+
+        .modal-btn {
+            padding: 12px 30px;
+            font-size: 18px;
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            margin: 10px;
+        }
+
+        .event-popup {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(255, 215, 0, 0.95);
+            color: #000;
+            padding: 20px 30px;
+            border-radius: 10px;
+            font-size: 18px;
+            font-weight: bold;
+            z-index: 50;
+            animation: popupAnim 0.5s;
+            pointer-events: none;
+        }
+
+        @keyframes popupAnim {
+            0% { transform: translate(-50%, -50%) scale(0.5); opacity: 0; }
+            50% { transform: translate(-50%, -50%) scale(1.1); }
+            100% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+        }
+
+        @media (max-width: 768px) {
+            .stat-item {
+                font-size: 12px;
+            }
+
+            .stat-bar {
+                width: 80px;
+                height: 18px;
+            }
+
+            .gate-icon {
+                font-size: 36px;
+            }
+
+            .btn {
+                font-size: 14px;
+                padding: 15px 12px;
+                min-height: 55px;
+            }
+
+            #topBar {
+                padding: 8px 10px;
+            }
+
+            .modal-content {
+                padding: 20px;
+            }
+
+            .modal-title {
+                font-size: 20px;
+            }
+
+            .modal-text {
+                font-size: 14px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="gameContainer">
+        <canvas id="gameCanvas"></canvas>
+        <div id="uiOverlay">
+            <div id="topBar">
+                <div class="stat-item">
+                    <span>迷惑值:</span>
+                    <div class="stat-bar">
+                        <div class="stat-fill" id="confusionBar" style="width: 0%"></div>
+                    </div>
+                    <span class="stat-text" id="confusionText">0%</span>
+                </div>
+                <div class="stat-item">
+                    <span>粮草:</span>
+                    <span class="stat-text" id="supplyText">0/1000</span>
+                </div>
+                <div class="stat-item">
+                    <span>波次:</span>
+                    <span class="stat-text" id="waveText">1/∞</span>
+                </div>
+                <div class="stat-item">
+                    <span>最高分:</span>
+                    <span class="stat-text" id="highScoreText">0</span>
+                </div>
+            </div>
+
+            <div id="centerArea">
+                <div class="gate-display">
+                    <div class="gate-icon">🏯</div>
+                    <div class="gate-label">东门</div>
+                    <div class="gate-status" id="eastStatus">假攻中</div>
+                </div>
+                <div class="gate-display">
+                    <div class="gate-icon">🏯</div>
+                    <div class="gate-label">西门</div>
+                    <div class="gate-status" id="westStatus">待机</div>
+                </div>
+            </div>
+
+            <div id="bottomBar">
+                <div id="actionButtons">
+                    <button class="btn btn-primary" id="fakeAttackBtn">假攻东门 (+迷惑20)</button>
+                    <button class="btn btn-success" id="sneakAttackBtn" disabled>奇袭西门 (时机未到)</button>
+                    <button class="btn btn-item" id="smokeBtn">烟雾👻 (CD:0s)</button>
+                    <button class="btn btn-item" id="intelBtn">假情报📜 (CD:0s)</button>
+                    <button class="btn btn-item" id="arrowBtn">弓箭🏹 (CD:0s)</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="modal">
+            <div class="modal-content" id="modalContent"></div>
+        </div>
+    </div>
+
+    <script>
+        // ==================== 游戏核心配置 ====================
+        const CONFIG = {
+            // 基础数值
+            INITIAL_CONFUSION: 0,
+            INITIAL_SUPPLY: 0,
+            INITIAL_ENEMY_EAST: 50, // 敌主力在东门的百分比
+            
+            // 波次配置
+            WAVE_DURATION: 15000, // 15秒/波
+            CONFUSION_THRESHOLD: 70, // 基础迷惑值阈值
+            CONFUSION_THRESHOLD_INC: 5, // 每波阈值增加
+            CONFUSION_PER_ATTACK: 20, // 每次假攻增加迷惑值
+            
+            // 奇袭配置
+            SNEAK_WINDOW: 10000, // 奇袭时机窗口10秒
+            SNEAK_REWARD: 200, // 奇袭成功奖励粮草
+            SNEAK_RISK_BASE: 15, // 基础风险百分比
+            SNEAK_RISK_INC: 3, // 每波风险增加
+            
+            // 道具配置
+            SMOKE_CONFUSION: 30, // 烟雾增加迷惑值
+            SMOKE_CD: 12000, // 烟雾冷却12秒
+            INTEL_SLOW: 0.5, // 假情报减慢敌移动速度
+            INTEL_CD: 15000, // 假情报冷却15秒
+            ARROW_RISK_REDUCE: 20, // 弓箭减少风险
+            ARROW_CD: 10000, // 弓箭冷却10秒
+            
+            // 随机事件概率
+            EVENT_CHANCE: 0.2, // 20%概率触发事件
+            EVENT_ENEMY_SUSPICION: 0.5, // 敌斥候疑事件概率（在事件中）
+            EVENT_MIST_BONUS: 0.5, // 迷雾助攻事件概率（在事件中）
+            
+            // 难度递增
+            WAVE_DEFENSE_START: 5, // 第5波开始防御提升
+            WAVE_DEFENSE_CONFUSION_INC: 15, // 防御提升后迷惑阈值额外增加
+            WAVE_DEFENSE_RISK_INC: 15, // 防御提升后风险额外增加
+            GREED_MULTIPLIER: 1.5, // 贪心翻倍（风险翻1.5倍）
+            
+            // 胜利条件
+            VICTORY_SUPPLY: 1000, // 大胜所需粮草
+            LEGENDARY_SUPPLY: 1500, // 神结局所需粮草
+            
+            // 分数计算
+            SCORE_BASE_MULTIPLIER: 1.3, // 分数基础倍数
+        };
+
+        // ==================== 游戏状态 ====================
+        let gameState = {
+            confusion: CONFIG.INITIAL_CONFUSION,
+            supply: CONFIG.INITIAL_SUPPLY,
+            wave: 1,
+            enemyEastPercent: CONFIG.INITIAL_ENEMY_EAST,
+            
+            // 波次计时
+            waveStartTime: Date.now(),
+            waveElapsed: 0,
+            
+            // 奇袭状态
+            sneakWindowOpen: false,
+            sneakWindowStart: 0,
+            sneakWindowEnd: 0,
+            
+            // 道具状态
+            smokeCooldown: 0,
+            intelCooldown: 0,
+            arrowCooldown: 0,
+            intelActive: false,
+            arrowActive: false,
+            
+            // 动画状态
+            animations: [],
+            particles: [],
+            
+            // 游戏状态
+            gameStarted: false,
+            gameOver: false,
+            tutorialShown: false,
+            
+            // 拖拽状态（手机）
+            isDragging: false,
+            dragStartX: 0,
+            dragStartY: 0,
+            cameraOffsetX: 0,
+            cameraOffsetY: 0,
+        };
+
+        // ==================== Canvas 设置 ====================
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+        resizeCanvas();
+        window.addEventListener('resize', resizeCanvas);
+
+        // ==================== 本地存储 ====================
+        function getHighScore() {
+            return parseInt(localStorage.getItem('sneakAttackHighScore') || '0');
+        }
+
+        function saveHighScore(score) {
+            const current = getHighScore();
+            if (score > current) {
+                localStorage.setItem('sneakAttackHighScore', score.toString());
+                return true;
+            }
+            return false;
+        }
+
+        // ==================== 音效系统 ====================
+        const sounds = {
+            fakeAttack: null,
+            sneakAttack: null,
+            victory: null,
+            failure: null,
+        };
+
+        function playSound(type) {
+            // 使用Web Audio API创建简单音效
+            const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            const oscillator = audioContext.createOscillator();
+            const gainNode = audioContext.createGain();
+            
+            oscillator.connect(gainNode);
+            gainNode.connect(audioContext.destination);
+            
+            switch(type) {
+                case 'fakeAttack':
+                    oscillator.frequency.value = 200;
+                    oscillator.type = 'sine';
+                    gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+                    gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.3);
+                    oscillator.start();
+                    oscillator.stop(audioContext.currentTime + 0.3);
+                    break;
+                case 'sneakAttack':
+                    oscillator.frequency.value = 800;
+                    oscillator.type = 'sawtooth';
+                    gainNode.gain.setValueAtTime(0.4, audioContext.currentTime);
+                    gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.5);
+                    oscillator.start();
+                    oscillator.stop(audioContext.currentTime + 0.5);
+                    break;
+                case 'victory':
+                    oscillator.frequency.value = 400;
+                    oscillator.type = 'sine';
+                    gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+                    gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.8);
+                    oscillator.start();
+                    oscillator.stop(audioContext.currentTime + 0.8);
+                    break;
+                case 'failure':
+                    oscillator.frequency.value = 150;
+                    oscillator.type = 'triangle';
+                    gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+                    gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.4);
+                    oscillator.start();
+                    oscillator.stop(audioContext.currentTime + 0.4);
+                    break;
+            }
+        }
+
+        // ==================== 动画系统 ====================
+        class Particle {
+            constructor(x, y, type) {
+                this.x = x;
+                this.y = y;
+                this.vx = (Math.random() - 0.5) * 4;
+                this.vy = (Math.random() - 0.5) * 4;
+                this.life = 1.0;
+                this.decay = 0.02;
+                this.type = type;
+                this.size = Math.random() * 5 + 3;
+            }
+
+            update() {
+                this.x += this.vx;
+                this.y += this.vy;
+                this.life -= this.decay;
+                return this.life > 0;
+            }
+
+            draw() {
+                ctx.save();
+                ctx.globalAlpha = this.life;
+                ctx.fillStyle = this.type === 'fire' ? '#ff6b35' : '#4a90e2';
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.restore();
+            }
+        }
+
+        class Animation {
+            constructor(type, x, y, duration) {
+                this.type = type;
+                this.x = x;
+                this.y = y;
+                this.startTime = Date.now();
+                this.duration = duration;
+                this.progress = 0;
+            }
+
+            update() {
+                this.progress = (Date.now() - this.startTime) / this.duration;
+                return this.progress < 1;
+            }
+
+            draw() {
+                ctx.save();
+                ctx.globalAlpha = 1 - this.progress;
+                ctx.font = '48px Arial';
+                ctx.textAlign = 'center';
+                
+                if (this.type === 'sneak') {
+                    ctx.fillText('💥', this.x, this.y);
+                } else if (this.type === 'fake') {
+                    ctx.fillText('⚔️', this.x, this.y);
+                }
+                
+                ctx.restore();
+            }
+        }
+
+        // ==================== Canvas 绘制 ====================
+        function drawBackground() {
+            // 墨蓝迷雾渐变背景
+            const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
+            gradient.addColorStop(0, '#0a0e27');
+            gradient.addColorStop(0.5, '#1a1f3a');
+            gradient.addColorStop(1, '#0f1425');
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // 迷雾效果
+            ctx.fillStyle = 'rgba(100, 120, 180, 0.1)';
+            for (let i = 0; i < 20; i++) {
+                const x = (Date.now() * 0.01 + i * 100) % canvas.width;
+                const y = (Date.now() * 0.02 + i * 50) % canvas.height;
+                ctx.beginPath();
+                ctx.arc(x, y, 50 + Math.sin(Date.now() * 0.001 + i) * 20, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+
+        function drawGates() {
+            const gateWidth = 150;
+            const gateHeight = 200;
+            const eastX = canvas.width * 0.25;
+            const westX = canvas.width * 0.75;
+            const gateY = canvas.height * 0.4;
+
+            // 东门（灯火红）
+            ctx.save();
+            ctx.shadowBlur = 20;
+            ctx.shadowColor = '#ff4444';
+            ctx.fillStyle = gameState.sneakWindowOpen ? '#ff6666' : '#cc3333';
+            ctx.fillRect(eastX - gateWidth/2, gateY - gateHeight/2, gateWidth, gateHeight);
+            
+            // 东门装饰
+            ctx.fillStyle = '#ffaa00';
+            ctx.fillRect(eastX - gateWidth/2 + 10, gateY - gateHeight/2 + 10, gateWidth - 20, 20);
+            ctx.fillRect(eastX - gateWidth/2 + 10, gateY + gateHeight/2 - 30, gateWidth - 20, 20);
+            
+            // 东门旗帜
+            ctx.fillStyle = '#ff0000';
+            ctx.beginPath();
+            ctx.moveTo(eastX + gateWidth/2, gateY - gateHeight/2);
+            ctx.lineTo(eastX + gateWidth/2 + 30, gateY - gateHeight/2 - 20);
+            ctx.lineTo(eastX + gateWidth/2, gateY - gateHeight/2 - 10);
+            ctx.fill();
+            ctx.restore();
+
+            // 西门（漆黑）
+            ctx.save();
+            ctx.shadowBlur = 10;
+            ctx.shadowColor = '#0000ff';
+            ctx.fillStyle = gameState.sneakWindowOpen ? '#3333cc' : '#000033';
+            ctx.fillRect(westX - gateWidth/2, gateY - gateHeight/2, gateWidth, gateHeight);
+            
+            // 西门装饰
+            ctx.fillStyle = '#444444';
+            ctx.fillRect(westX - gateWidth/2 + 10, gateY - gateHeight/2 + 10, gateWidth - 20, 20);
+            ctx.fillRect(westX - gateWidth/2 + 10, gateY + gateHeight/2 - 30, gateWidth - 20, 20);
+            
+            // 西门旗帜（奇袭时亮起）
+            if (gameState.sneakWindowOpen) {
+                ctx.fillStyle = '#00ff00';
+                ctx.beginPath();
+                ctx.moveTo(westX + gateWidth/2, gateY - gateHeight/2);
+                ctx.lineTo(westX + gateWidth/2 + 30, gateY - gateHeight/2 - 20);
+                ctx.lineTo(westX + gateWidth/2, gateY - gateHeight/2 - 10);
+                ctx.fill();
+            }
+            ctx.restore();
+        }
+
+        function drawEnemyForces() {
+            const barWidth = 300;
+            const barHeight = 30;
+            const barX = canvas.width / 2 - barWidth / 2;
+            const barY = canvas.height * 0.15;
+
+            // 敌主力条背景
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.2)';
+            ctx.fillRect(barX, barY, barWidth, barHeight);
+
+            // 敌主力条（红色，显示在东门的百分比）
+            const fillWidth = (barWidth * gameState.enemyEastPercent / 100);
+            const gradient = ctx.createLinearGradient(barX, barY, barX + fillWidth, barY);
+            gradient.addColorStop(0, '#ff0000');
+            gradient.addColorStop(1, '#cc0000');
+            ctx.fillStyle = gradient;
+            ctx.fillRect(barX, barY, fillWidth, barHeight);
+
+            // 敌主力条边框
+            ctx.strokeStyle = '#fff';
+            ctx.lineWidth = 2;
+            ctx.strokeRect(barX, barY, barWidth, barHeight);
+
+            // 敌主力标签
+            ctx.fillStyle = '#fff';
+            ctx.font = 'bold 16px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText('敌主力分布', canvas.width / 2, barY - 10);
+            ctx.fillText(`东门: ${Math.round(gameState.enemyEastPercent)}%`, canvas.width / 2, barY + barHeight + 20);
+        }
+
+        function drawSoldiers() {
+            const eastX = canvas.width * 0.25;
+            const westX = canvas.width * 0.75;
+            const baseY = canvas.height * 0.6;
+
+            // 东门假兵（多）
+            ctx.font = '32px Arial';
+            ctx.textAlign = 'center';
+            for (let i = 0; i < 5; i++) {
+                const offsetX = (Math.sin(Date.now() * 0.002 + i) * 20);
+                const offsetY = (Math.cos(Date.now() * 0.003 + i) * 10);
+                ctx.fillText('🚶', eastX + offsetX, baseY + offsetY + i * 15);
+            }
+
+            // 西门真兵（少，奇袭时显示）
+            if (gameState.sneakWindowOpen) {
+                ctx.fillText('👤', westX, baseY);
+                ctx.fillText('👤', westX - 20, baseY + 15);
+            }
+        }
+
+        function drawParticles() {
+            gameState.particles.forEach(p => {
+                if (p.update()) {
+                    p.draw();
+                }
+            });
+            gameState.particles = gameState.particles.filter(p => p.life > 0);
+        }
+
+        function drawAnimations() {
+            gameState.animations.forEach(anim => {
+                if (anim.update()) {
+                    anim.draw();
+                }
+            });
+            gameState.animations = gameState.animations.filter(anim => anim.progress < 1);
+        }
+
+        function draw() {
+            drawBackground();
+            drawGates();
+            drawEnemyForces();
+            drawSoldiers();
+            drawParticles();
+            drawAnimations();
+        }
+
+        // ==================== 游戏逻辑 ====================
+        function updateWave() {
+            const now = Date.now();
+            gameState.waveElapsed = now - gameState.waveStartTime;
+
+            // 检查是否达到迷惑阈值
+            const threshold = getConfusionThreshold();
+            if (gameState.confusion >= threshold && !gameState.sneakWindowOpen) {
+                openSneakWindow();
+            }
+
+            // 更新奇袭窗口
+            if (gameState.sneakWindowOpen) {
+                const windowElapsed = now - gameState.sneakWindowStart;
+                if (windowElapsed > CONFIG.SNEAK_WINDOW) {
+                    closeSneakWindow();
+                }
+            }
+
+            // 更新敌主力移动（如果奇袭窗口打开）
+            if (gameState.sneakWindowOpen) {
+                const moveSpeed = gameState.intelActive ? CONFIG.INTEL_SLOW : 1;
+                gameState.enemyEastPercent = Math.max(0, gameState.enemyEastPercent - 0.5 * moveSpeed);
+            }
+
+            // 更新道具冷却
+            updateCooldowns();
+
+            // 检查随机事件
+            if (Math.random() < CONFIG.EVENT_CHANCE * 0.01) { // 每帧0.2%概率
+                triggerRandomEvent();
+            }
+        }
+
+        function getConfusionThreshold() {
+            let threshold = CONFIG.CONFUSION_THRESHOLD;
+            threshold += (gameState.wave - 1) * CONFIG.CONFUSION_THRESHOLD_INC;
+            
+            if (gameState.wave >= CONFIG.WAVE_DEFENSE_START) {
+                threshold += CONFIG.WAVE_DEFENSE_CONFUSION_INC;
+            }
+            
+            return threshold;
+        }
+
+        function openSneakWindow() {
+            gameState.sneakWindowOpen = true;
+            gameState.sneakWindowStart = Date.now();
+            gameState.sneakWindowEnd = Date.now() + CONFIG.SNEAK_WINDOW;
+            
+            document.getElementById('sneakAttackBtn').disabled = false;
+            document.getElementById('sneakAttackBtn').textContent = '奇袭西门 (时机已到！)';
+            
+            // 添加动画
+            const westX = canvas.width * 0.75;
+            const westY = canvas.height * 0.4;
+            gameState.animations.push(new Animation('sneak', westX, westY, 1000));
+            
+            // 添加粒子
+            for (let i = 0; i < 20; i++) {
+                gameState.particles.push(new Particle(westX, westY, 'fire'));
+            }
+        }
+
+        function closeSneakWindow() {
+            gameState.sneakWindowOpen = false;
+            document.getElementById('sneakAttackBtn').disabled = true;
+            document.getElementById('sneakAttackBtn').textContent = '奇袭西门 (时机未到)';
+        }
+
+        function fakeAttack() {
+            if (gameState.gameOver) return;
+            
+            gameState.confusion = Math.min(100, gameState.confusion + CONFIG.CONFUSION_PER_ATTACK);
+            playSound('fakeAttack');
+            
+            // 添加动画
+            const eastX = canvas.width * 0.25;
+            const eastY = canvas.height * 0.4;
+            gameState.animations.push(new Animation('fake', eastX, eastY, 500));
+            
+            // 添加粒子
+            for (let i = 0; i < 10; i++) {
+                gameState.particles.push(new Particle(eastX, eastY, 'fire'));
+            }
+            
+            updateUI();
+        }
+
+        function sneakAttack() {
+            if (!gameState.sneakWindowOpen || gameState.gameOver) return;
+            
+            const now = Date.now();
+            const windowElapsed = now - gameState.sneakWindowStart;
+            
+            // 检查时机
+            if (windowElapsed < CONFIG.SNEAK_WINDOW * 0.3) {
+                // 太早，失败
+                handleSneakFailure('时机未到！敌主力尚未完全移向东门，反扑失败！');
+                return;
+            }
+            
+            // 计算风险
+            let risk = CONFIG.SNEAK_RISK_BASE;
+            risk += (gameState.wave - 1) * CONFIG.SNEAK_RISK_INC;
+            
+            if (gameState.wave >= CONFIG.WAVE_DEFENSE_START) {
+                risk += CONFIG.WAVE_DEFENSE_RISK_INC;
+            }
+            
+            if (gameState.arrowActive) {
+                risk = Math.max(0, risk - CONFIG.ARROW_RISK_REDUCE);
+            }
+            
+            // 检查是否失败
+            if (Math.random() * 100 < risk) {
+                handleSneakFailure(`敌识破计策！风险${risk}%触发失败！`);
+                return;
+            }
+            
+            // 成功
+            handleSneakSuccess();
+        }
+
+        function handleSneakSuccess() {
+            playSound('sneakAttack');
+            gameState.supply += CONFIG.SNEAK_REWARD;
+            gameState.wave++;
+            gameState.waveStartTime = Date.now();
+            gameState.confusion = 0;
+            gameState.enemyEastPercent = CONFIG.INITIAL_ENEMY_EAST;
+            gameState.sneakWindowOpen = false;
+            gameState.intelActive = false;
+            gameState.arrowActive = false;
+            
+            // 添加胜利动画
+            const westX = canvas.width * 0.75;
+            const westY = canvas.height * 0.4;
+            for (let i = 0; i < 50; i++) {
+                gameState.particles.push(new Particle(westX, westY, 'fire'));
+            }
+            
+            closeSneakWindow();
+            updateUI();
+            
+            // 检查胜利条件
+            if (gameState.supply >= CONFIG.LEGENDARY_SUPPLY) {
+                endGame('legendary');
+            } else if (gameState.supply >= CONFIG.VICTORY_SUPPLY) {
+                endGame('victory');
+            }
+        }
+
+        function handleSneakFailure(reason) {
+            playSound('failure');
+            gameState.supply = Math.max(0, gameState.supply - 100);
+            
+            // 失败动画（灰屏效果）
+            ctx.fillStyle = 'rgba(100, 100, 100, 0.5)';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            showEventPopup(reason);
+            updateUI();
+        }
+
+        function useSmoke() {
+            if (gameState.smokeCooldown > 0 || gameState.gameOver) return;
+            
+            gameState.confusion = Math.min(100, gameState.confusion + CONFIG.SMOKE_CONFUSION);
+            gameState.smokeCooldown = CONFIG.SMOKE_CD;
+            
+            // 添加烟雾粒子
+            for (let i = 0; i < 30; i++) {
+                const x = canvas.width * 0.5;
+                const y = canvas.height * 0.5;
+                gameState.particles.push(new Particle(x, y, 'smoke'));
+            }
+            
+            updateUI();
+        }
+
+        function useIntel() {
+            if (gameState.intelCooldown > 0 || gameState.gameOver) return;
+            
+            gameState.intelActive = true;
+            gameState.intelCooldown = CONFIG.INTEL_CD;
+            updateUI();
+        }
+
+        function useArrow() {
+            if (gameState.arrowCooldown > 0 || gameState.gameOver) return;
+            
+            gameState.arrowActive = true;
+            gameState.arrowCooldown = CONFIG.ARROW_CD;
+            updateUI();
+        }
+
+        function updateCooldowns() {
+            const delta = 100; // 每100ms更新一次
+            if (gameState.smokeCooldown > 0) {
+                gameState.smokeCooldown = Math.max(0, gameState.smokeCooldown - delta);
+            }
+            if (gameState.intelCooldown > 0) {
+                gameState.intelCooldown = Math.max(0, gameState.intelCooldown - delta);
+            }
+            if (gameState.arrowCooldown > 0) {
+                gameState.arrowCooldown = Math.max(0, gameState.arrowCooldown - delta);
+            }
+        }
+
+        function triggerRandomEvent() {
+            if (Math.random() < CONFIG.EVENT_ENEMY_SUSPICION) {
+                // 敌斥候疑
+                gameState.confusion = Math.max(0, gameState.confusion - 10);
+                showEventPopup('⚠️ 敌斥候疑！迷惑值-10');
+                playSound('failure');
+            } else {
+                // 迷雾助攻
+                gameState.supply += 50;
+                showEventPopup('🌫️ 迷雾助攻！粮草+50，时机窗口延长5秒');
+                if (gameState.sneakWindowOpen) {
+                    gameState.sneakWindowEnd += 5000;
+                }
+                playSound('victory');
+            }
+            updateUI();
+        }
+
+        // ==================== UI 更新 ====================
+        function updateUI() {
+            // 迷惑值
+            const confusionPercent = Math.min(100, gameState.confusion);
+            document.getElementById('confusionBar').style.width = confusionPercent + '%';
+            document.getElementById('confusionText').textContent = Math.round(confusionPercent) + '%';
+            
+            // 粮草
+            document.getElementById('supplyText').textContent = `${gameState.supply}/1000`;
+            
+            // 波次
+            document.getElementById('waveText').textContent = `${gameState.wave}/∞`;
+            
+            // 最高分
+            document.getElementById('highScoreText').textContent = getHighScore();
+            
+            // 门状态
+            document.getElementById('eastStatus').textContent = gameState.sneakWindowOpen ? '假攻中' : '假攻中';
+            document.getElementById('westStatus').textContent = gameState.sneakWindowOpen ? '奇袭时机！' : '待机';
+            
+            // 道具按钮
+            const smokeBtn = document.getElementById('smokeBtn');
+            smokeBtn.disabled = gameState.smokeCooldown > 0;
+            smokeBtn.textContent = `烟雾👻 (CD:${Math.ceil(gameState.smokeCooldown / 1000)}s)`;
+            
+            const intelBtn = document.getElementById('intelBtn');
+            intelBtn.disabled = gameState.intelCooldown > 0;
+            intelBtn.textContent = `假情报📜 (CD:${Math.ceil(gameState.intelCooldown / 1000)}s)`;
+            
+            const arrowBtn = document.getElementById('arrowBtn');
+            arrowBtn.disabled = gameState.arrowCooldown > 0;
+            arrowBtn.textContent = `弓箭🏹 (CD:${Math.ceil(gameState.arrowCooldown / 1000)}s)`;
+        }
+
+        function showEventPopup(text) {
+            const popup = document.createElement('div');
+            popup.className = 'event-popup';
+            popup.textContent = text;
+            document.body.appendChild(popup);
+            
+            setTimeout(() => {
+                popup.remove();
+            }, 2000);
+        }
+
+        function showModal(title, content, buttonText, onClose) {
+            const modal = document.getElementById('modal');
+            const modalContent = document.getElementById('modalContent');
+            
+            modalContent.innerHTML = `
+                <div class="modal-title">${title}</div>
+                <div class="modal-text">${content}</div>
+                <button class="modal-btn" id="modalCloseBtn">${buttonText}</button>
+            `;
+            
+            modal.style.display = 'flex';
+            
+            document.getElementById('modalCloseBtn').onclick = () => {
+                modal.style.display = 'none';
+                if (onClose) onClose();
+            };
+        }
+
+        // ==================== 游戏结束 ====================
+        function endGame(type) {
+            gameState.gameOver = true;
+            
+            const score = calculateScore();
+            const isNewRecord = saveHighScore(score);
+            
+            let title, content, ending;
+            
+            if (type === 'legendary') {
+                title = '🎉 神结局：声东击西，天下无双！';
+                ending = '传奇';
+                content = `
+                    <p>你以超凡的智慧与勇气，完美演绎了"声东击西"之计！</p>
+                    <p>粮草：${gameState.supply} | 波次：${gameState.wave} | 分数：${Math.round(score)}</p>
+                    <p><strong>三十六计第六计 - 声东击西：</strong></p>
+                    <p>敌志乱萃，不虞，坤下兑上之象。利其不自主而取之。</p>
+                    <p>当敌人意志混乱、无法统一时，利用其无法自主判断的弱点，攻其不备，出其不意。</p>
+                    <p>你通过假攻东门迷惑敌人，在最佳时机奇袭西门，展现了完美的战术智慧！</p>
+                    ${isNewRecord ? '<p style="color: #ffd700; font-size: 20px;">🏆 新纪录！</p>' : ''}
+                `;
+            } else if (type === 'victory') {
+                title = '🎊 大胜：声东击西，计策成功！';
+                ending = '大胜';
+                content = `
+                    <p>你成功运用"声东击西"之计，取得了辉煌胜利！</p>
+                    <p>粮草：${gameState.supply} | 波次：${gameState.wave} | 分数：${Math.round(score)}</p>
+                    <p><strong>三十六计第六计 - 声东击西：</strong></p>
+                    <p>通过在东门制造假象，成功将敌主力吸引过去，然后奇袭防守薄弱的西门，一举成功！</p>
+                    ${isNewRecord ? '<p style="color: #ffd700; font-size: 20px;">🏆 新纪录！</p>' : ''}
+                `;
+            }
+            
+            showModal(title, content, '重新开始', () => {
+                resetGame();
+            });
+            
+            playSound('victory');
+        }
+
+        function calculateScore() {
+            const baseScore = gameState.supply;
+            const waveMultiplier = Math.pow(CONFIG.SCORE_BASE_MULTIPLIER, gameState.wave);
+            const itemBonus = (gameState.smokeCooldown === 0 ? 1 : 0.9) * 
+                             (gameState.intelCooldown === 0 ? 1 : 0.9) * 
+                             (gameState.arrowCooldown === 0 ? 1 : 0.9);
+            return baseScore * waveMultiplier * itemBonus;
+        }
+
+        // ==================== 游戏重置 ====================
+        function resetGame() {
+            gameState = {
+                confusion: CONFIG.INITIAL_CONFUSION,
+                supply: CONFIG.INITIAL_SUPPLY,
+                wave: 1,
+                enemyEastPercent: CONFIG.INITIAL_ENEMY_EAST,
+                waveStartTime: Date.now(),
+                waveElapsed: 0,
+                sneakWindowOpen: false,
+                sneakWindowStart: 0,
+                sneakWindowEnd: 0,
+                smokeCooldown: 0,
+                intelCooldown: 0,
+                arrowCooldown: 0,
+                intelActive: false,
+                arrowActive: false,
+                animations: [],
+                particles: [],
+                gameStarted: true,
+                gameOver: false,
+                tutorialShown: false,
+                isDragging: false,
+                dragStartX: 0,
+                dragStartY: 0,
+                cameraOffsetX: 0,
+                cameraOffsetY: 0,
+            };
+            
+            updateUI();
+        }
+
+        // ==================== 教程 ====================
+        function showTutorial() {
+            showModal(
+                '📖 教程：声东击西',
+                `
+                <p><strong>游戏目标：</strong>通过假攻东门积累迷惑值，在时机成熟时奇袭西门，积累粮草达到1000（大胜）或1500（神结局）。</p>
+                <p><strong>操作说明：</strong></p>
+                <p>1. 点击"假攻东门"积累迷惑值（每次+20）</p>
+                <p>2. 当迷惑值≥70%时，西门奇袭按钮会亮起</p>
+                <p>3. 在10秒时机窗口内点击"奇袭西门"（不要太早！）</p>
+                <p>4. 使用道具：烟雾（+迷惑30%）、假情报（减慢敌移动）、弓箭（降低风险）</p>
+                <p><strong>提示：</strong>每波难度递增，第5波后防御大幅提升。注意随机事件！</p>
+                `,
+                '开始游戏',
+                () => {
+                    gameState.gameStarted = true;
+                    gameState.tutorialShown = true;
+                }
+            );
+        }
+
+        // ==================== 事件监听 ====================
+        document.getElementById('fakeAttackBtn').addEventListener('click', fakeAttack);
+        document.getElementById('sneakAttackBtn').addEventListener('click', sneakAttack);
+        document.getElementById('smokeBtn').addEventListener('click', useSmoke);
+        document.getElementById('intelBtn').addEventListener('click', useIntel);
+        document.getElementById('arrowBtn').addEventListener('click', useArrow);
+
+        // 手机拖拽支持
+        canvas.addEventListener('touchstart', (e) => {
+            gameState.isDragging = true;
+            gameState.dragStartX = e.touches[0].clientX;
+            gameState.dragStartY = e.touches[0].clientY;
+        });
+
+        canvas.addEventListener('touchmove', (e) => {
+            if (gameState.isDragging) {
+                const deltaX = e.touches[0].clientX - gameState.dragStartX;
+                const deltaY = e.touches[0].clientY - gameState.dragStartY;
+                gameState.cameraOffsetX += deltaX * 0.1;
+                gameState.cameraOffsetY += deltaY * 0.1;
+                gameState.dragStartX = e.touches[0].clientX;
+                gameState.dragStartY = e.touches[0].clientY;
+            }
+        });
+
+        canvas.addEventListener('touchend', () => {
+            gameState.isDragging = false;
+        });
+
+        // ==================== 游戏循环 ====================
+        function gameLoop() {
+            if (gameState.gameStarted && !gameState.gameOver) {
+                updateWave();
+            }
+            
+            updateUI();
+            draw();
+            
+            requestAnimationFrame(gameLoop);
+        }
+
+        // ==================== 初始化 ====================
+        function init() {
+            updateUI();
+            document.getElementById('highScoreText').textContent = getHighScore();
+            showTutorial();
+            gameLoop();
+        }
+
+        init();
+    </script>
+</body>
+</html>
+
